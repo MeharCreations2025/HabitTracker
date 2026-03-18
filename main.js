@@ -1,0 +1,42 @@
+// App.tsx
+import React, { useState, useEffect } from 'react';
+import { QueryClient, QueryClientProvider } from 'react-query';
+import { motion, AnimatePresence } from 'framer-motion';
+import Dashboard from './components/Dashboard';
+import LiteMode from './components/LiteMode';
+import Settings from './components/Settings';
+import { useHabits } from './hooks/useHabits';
+import { usePrayerTimes } from './hooks/usePrayerTimes';
+import { ThemeProvider } from './context/ThemeContext';
+import './App.css';
+
+const queryClient = new QueryClient();
+
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider>
+        <HabitTracker />
+      </ThemeProvider>
+    </QueryClientProvider>
+  );
+}
+
+function HabitTracker() {
+  const [currentView, setCurrentView] = useState<'dashboard' | 'lite' | 'settings'>('dashboard');
+  const [liteMode, setLiteMode] = useState(false);
+  
+  return (
+    <div className="min-h-screen bg-gray-900 text-white">
+      <AnimatePresence mode="wait">
+        {liteMode ? (
+          <LiteMode key="lite" onToggleLite={() => setLiteMode(false)} />
+        ) : (
+          <Dashboard key="dashboard" onToggleLite={() => setLiteMode(true)} />
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+export default App;
