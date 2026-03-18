@@ -1,0 +1,49 @@
+interface User {
+  id: string;
+  name: string;
+  location: { lat: number; lng: number };
+  timezone: string;
+  preferences: UserPreferences;
+}
+
+interface UserPreferences {
+  darkMode: boolean;
+  notifications: boolean;
+  liteMode: boolean;
+  prayerAdjustments: PrayerAdjustments;
+}
+
+interface Prayer {
+  name: 'fajr' | 'dhuhr' | 'asr' | 'maghrib' | 'isha';
+  time: string;
+  completed: boolean;
+  date: string;
+}
+
+interface Habit {
+  id: string;
+  name: string;
+  category: 'prayer' | 'wazifa' | 'quran' | 'exercise' | 'work' | 'social';
+  prayerPeriod: 'fajr' | 'dhuhr' | 'asr' | 'maghrib' | 'isha';
+  enabled: boolean;
+  sundayEnabled: boolean;
+  order: number;
+}
+
+interface DailyProgress {
+  date: string;
+  habits: { [habitId: string]: 'completed' | 'skipped' | 'pending' };
+  prayers: Prayer[];
+  socialMediaTime: number;
+  socialMediaUseful: boolean;
+  dailyScore: number;
+  reflection: NightReflection;
+}
+
+interface Wazifa {
+  id: string;
+  name: string;
+  time: string;
+  notes?: string;
+  completed: boolean;
+}

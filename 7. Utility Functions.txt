@@ -1,0 +1,85 @@
+// utils/habitFlow.ts
+import { Habit, DailyProgress, PrayerTimes } from '../types';
+
+export const getCurrentPrayerPeriod = (prayerTimes: PrayerTimes | null): string => {
+  if (!prayerTimes) return 'fajr';
+  
+  const now = new Date();
+  const prayers = [
+    { name: 'fajr', time: new Date(prayerTimes.fajr) },
+    { name: 'dhuhr', time: new Date(prayerTimes.dhuhr) },
+    { name: 'asr', time: new Date(prayerTimes.asr) },
+    { name: 'maghrib', time: new Date(prayerTimes.maghrib) },
+    { name: 'isha', time: new Date(prayerTimes.isha) }
+  ];
+
+  // Find current period
+  for (let i = 0; i < prayers.length; i++) {
+    const current = prayers[i];
+    const next = prayers[i + 1];
+    
+    if (!next) {
+      // After Isha
+      return 'isha';
+    }
+    
+    if (now >= current.time && now < next.time) {
+      return current.name;
+    }
+  }
+  
+  return 'fajr';
+};
+
+export const getNextHabit = (
+  habits: Habit[], 
+  progress: DailyProgress, 
+  currentPeriod: string
+): Habit | null => {
+  const isToday = new Date().getDay();
+  const isSunday = isToday === 0;
+  
+  // Filter habits for current period
+  const currentPeriodHabits = habits
+    .filter(habit => 
+      habit.prayerPeriod === currentPeriod && 
+      habit.enabled &&
+      (isSunday ? habit.sundayEnabled : true)
+    )
+    .sort((a, b) => a.order - b.order);
+
+  // Find first incomplete habit
+  for (const habit of currentPeriodHabits) {
+    const status = progress.habits[habit.id];
+    if (!status || status === 'skipped') {
+      return habit;
+    }
+  }
+
+  return null;
+};
+
+export const calculateStreak = (habitId: string, days: number = 30): number => {
+  let streak = 0;
+  const today = new Date();
+  
+  for (let i = 0; i < days; i++) {
+    const date = new Date(today);
+    date.setDate(date.getDate() - i);
+    const dateStr = date.toISOString().split('T')[0];
+    
+    const progress = localStorage.getItem(`progress-${dateStr}`);
+    if (progress) {
+      const data = JSON.parse(progress);
+      if (data.habits[habitId] === 'completed') {
+        streak++;
+      } else {
+        break;
+      }
+    } else {
+      break;
+    }
+  }
+  
+  return streak;
+};

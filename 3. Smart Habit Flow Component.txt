@@ -1,0 +1,158 @@
+// components/HabitFlow.tsx
+import React from 'react';
+import { motion } from 'framer-motion';
+import { CheckCircle, Circle, Clock, ArrowRight } from 'lucide-react';
+import { Habit, DailyProgress } from '../types';
+
+interface HabitFlowProps {
+  habits: Habit[];
+  progress: DailyProgress;
+  currentPeriod: string;
+  nextHabit: Habit | null;
+  onHabitUpdate: (habitId: string, status: 'completed' | 'skipped') => void;
+  className?: string;
+}
+
+const HabitFlow: React.FC<HabitFlowProps> = ({
+  habits,
+  progress,
+  currentPeriod,
+  nextHabit,
+  onHabitUpdate,
+  className
+}) => {
+  const prayerPeriods = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];
+  
+  const getHabitsForPeriod = (period: string) => {
+    return habits.filter(h => h.prayerPeriod === period && h.enabled);
+  };
+
+  const getHabitStatus = (habitId: string) => {
+    return progress.habits[habitId] || 'pending';
+  };
+
+  const handleHabitClick = (habitId: string) => {
+    const status = getHabitStatus(habitId);
+    if (status === 'pending') {
+      onHabitUpdate(habitId, 'completed');
+    } else if (status === 'completed') {
+      onHabitUpdate(habitId, 'skipped');
+    } else {
+      onHabitUpdate(habitId, 'completed');
+    }
+  };
+
+  return (
+    <div className={className}>
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-2xl font-semibold">Today's Flow</h2>
+        {nextHabit && (
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="flex items-center text-blue-400 bg-blue-900/20 px-4 py-2 rounded-lg"
+          >
+            <ArrowRight className="w-4 h-4 mr-2" />
+            <span className="text-sm">Next: {nextHabit.name}</span>
+          </motion.div>
+        )}
+      </div>
+
+      <div className="space-y-8">
+        {prayerPeriods.map((period) => {
+          const periodHabits = getHabitsForPeriod(period);
+          const isCurrentPeriod = period === currentPeriod;
+          
+          if (periodHabits.length === 0) return null;
+
+          return (
+            <motion.div
+              key={period}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className={`
+                p-6 rounded-xl border transition-all duration-300
+                ${isCurrentPeriod 
+                  ? 'bg-blue-900/20 border-blue-500/50 shadow-lg shadow-blue-500/10' 
+                  : 'bg-gray-800/50 border-gray-700/50'
+                }
+              `}
+            >
+              <div className="flex items-center mb-4">
+                <div className={`
+                  w-3 h-3 rounded-full mr-3
+                  ${isCurrentPeriod ? 'bg-blue-400 animate-pulse' : 'bg-gray-600'}
+                `} />
+                <h3 className="text-lg font-medium capitalize text-white">
+                  {period} Period
+                </h3>
+                {isCurrentPeriod && (
+                  <span className="ml-2 text-xs bg-blue-500 text-white px-2 py-1 rounded-full">
+                    Current
+                  </span>
+                )}
+              </div>
+
+              <div className="grid gap-3">
+                {periodHabits.map((habit) => {
+                  const status = getHabitStatus(habit.id);
+                  const isNext = nextHabit?.id === habit.id;
+                  
+                  return (
+                    <motion.button
+                      key={habit.id}
+                      onClick={() => handleHabitClick(habit.id)}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      className={`
+                        flex items-center p-4 rounded-lg text-left transition-all duration-200
+                        ${status === 'completed' 
+                          ? 'bg-green-900/30 border border-green-500/30' 
+                          : status === 'skipped'
+                          ? 'bg-red-900/30 border border-red-500/30'
+                          : isNext
+                          ? 'bg-yellow-900/30 border border-yellow-500/50 shadow-lg'
+                          : 'bg-gray-700/50 border border-gray-600/50 hover:bg-gray-700/70'
+                        }
+                      `}
+                    >
+                      <div className="mr-4">
+                        {status === 'completed' ? (
+                          <CheckCircle className="w-6 h-6 text-green-400" />
+                        ) : status === 'skipped' ? (
+                          <Circle className="w-6 h-6 text-red-400" />
+                        ) : (
+                          <Circle className={`w-6 h-6 ${isNext ? 'text-yellow-400' : 'text-gray-400'}`} />
+                        )}
+                      </div>
+                      
+                      <div className="flex-1">
+                        <h4 className="font-medium text-white">{habit.name}</h4>
+                        {isNext && (
+                          <p className="text-sm text-yellow-400 mt-1">
+                            Ready to complete
+                          </p>
+                        )}
+                      </div>
+
+                      {isNext && (
+                        <motion.div
+                          animate={{ x: [0, 5, 0] }}
+                          transition={{ repeat: Infinity, duration: 1.5 }}
+                        >
+                          <ArrowRight className="w-5 h-5 text-yellow-400" />
+                        </motion.div>
+                      )}
+                    </motion.button>
+                  );
+                })}
+              </div>
+            </motion.div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+export default HabitFlow;

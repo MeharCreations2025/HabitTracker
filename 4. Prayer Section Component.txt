@@ -1,0 +1,91 @@
+// components/PrayerSection.tsx
+import React from 'react';
+import { motion } from 'framer-motion';
+import { Clock, CheckCircle, Circle } from 'lucide-react';
+import { PrayerTimes } from '../types';
+
+interface PrayerSectionProps {
+  prayerTimes: PrayerTimes | null;
+  currentPeriod: string;
+  className?: string;
+}
+
+const PrayerSection: React.FC<PrayerSectionProps> = ({
+  prayerTimes,
+  currentPeriod,
+  className
+}) => {
+  const prayers = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];
+  
+  const formatTime = (time: string) => {
+    return new Date(time).toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    });
+  };
+
+  const isPrayerTime = (prayer: string) => {
+    if (!prayerTimes) return false;
+    const now = new Date();
+    const prayerTime = new Date(prayerTimes[prayer as keyof PrayerTimes]);
+    const timeDiff = Math.abs(now.getTime() - prayerTime.getTime());
+    return timeDiff <= 30 * 60 * 1000; // Within 30 minutes
+  };
+
+  return (
+    <div className={className}>
+      <h2 className="text-2xl font-semibold mb-6 flex items-center">
+        <Clock className="w-6 h-6 mr-3 text-blue-400" />
+        Prayer Times
+      </h2>
+      
+      <div className="grid grid-cols-5 gap-4">
+        {prayers.map((prayer) => {
+          const isCurrent = prayer === currentPeriod;
+          const isTime = isPrayerTime(prayer);
+          
+          return (
+            <motion.div
+              key={prayer}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className={`
+                p-4 rounded-lg text-center transition-all duration-300
+                ${isCurrent 
+                  ? 'bg-blue-900/40 border-2 border-blue-400/50' 
+                  : isTime
+                  ? 'bg-green-900/40 border-2 border-green-400/50 animate-pulse'
+                  : 'bg-gray-800/50 border border-gray-700/50'
+                }
+              `}
+            >
+              <h3 className="font-medium capitalize text-white mb-2">
+                {prayer}
+              </h3>
+              <p className="text-sm text-gray-300 mb-3">
+                {prayerTimes ? formatTime(prayerTimes[prayer as keyof PrayerTimes]) : '--:--'}
+              </p>
+              
+              <button className="w-full flex justify-center">
+                <Circle className={`
+                  w-6 h-6 transition-colors
+                  ${isCurrent ? 'text-blue-400' : 'text-gray-500'}
+                `} />
+              </button>
+              
+              {isCurrent && (
+                <p className="text-xs text-blue-400 mt-2">Current</p>
+              )}
+              {isTime && !isCurrent && (
+                <p className="text-xs text-green-400 mt-2">Prayer Time</p>
+              )}
+            </motion.div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+export default PrayerSection;

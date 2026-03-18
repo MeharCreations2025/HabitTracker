@@ -1,0 +1,92 @@
+// components/Dashboard.tsx
+import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import PrayerSection from './PrayerSection';
+import HabitFlow from './HabitFlow';
+import ProgressBar from './ProgressBar';
+import QuickActions from './QuickActions';
+import NightReview from './NightReview';
+import { usePrayerTimes } from '../hooks/usePrayerTimes';
+import { useHabits } from '../hooks/useHabits';
+import { getCurrentPrayerPeriod, getNextHabit } from '../utils/habitFlow';
+
+interface DashboardProps {
+  onToggleLite: () => void;
+}
+
+const Dashboard: React.FC<DashboardProps> = ({ onToggleLite }) => {
+  const { prayerTimes, loading: prayersLoading } = usePrayerTimes();
+  const { habits, progress, updateHabit, getDailyScore } = useHabits();
+  const [currentPeriod, setCurrentPeriod] = useState('fajr');
+  const [showNightReview, setShowNightReview] = useState(false);
+
+  useEffect(() => {
+    const period = getCurrentPrayerPeriod(prayerTimes);
+    setCurrentPeriod(period);
+    
+    // Show night review after Isha
+    const now = new Date();
+    const ishaTime = new Date(prayerTimes?.isha || '');
+    if (now > ishaTime && !progress.reflection) {
+      setShowNightReview(true);
+    }
+  }, [prayerTimes, progress]);
+
+  const nextHabit = getNextHabit(habits, progress, currentPeriod);
+  const dailyScore = getDailyScore();
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="container mx-auto px-4 py-6 max-w-4xl"
+    >
+      {/* Header */}
+      <header className="flex justify-between items-center mb-8">
+        <div>
+          <h1 className="text-3xl font-bold text-white">Daily Discipline</h1>
+          <p className="text-gray-400">
+            {new Date().toLocaleDateString('en-US', { 
+              weekday: 'long', 
+              month: 'long', 
+              day: 'numeric' 
+            })}
+          </p>
+        </div>
+        <QuickActions onToggleLite={onToggleLite} />
+      </header>
+
+      {/* Progress Overview */}
+      <ProgressBar score={dailyScore} className="mb-8" />
+
+      {/* Prayer Times */}
+      <PrayerSection 
+        prayerTimes={prayerTimes}
+        currentPeriod={currentPeriod}
+        className="mb-8"
+      />
+
+      {/* Smart Habit Flow */}
+      <HabitFlow
+        habits={habits}
+        progress={progress}
+        currentPeriod={currentPeriod}
+        nextHabit={nextHabit}
+        onHabitUpdate={updateHabit}
+        className="mb-8"
+      />
+
+      {/* Night Review Modal */}
+      <AnimatePresence>
+        {showNightReview && (
+          <NightReview
+            onComplete={() => setShowNightReview(false)}
+            progress={progress}
+          />
+        )}
+      </AnimatePresence>
+    </motion.div>
+  );
+};
+
+export default Dashboard;
